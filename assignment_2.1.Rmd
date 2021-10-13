@@ -1,0 +1,139 @@
+---
+title: "assignment_2.1"
+author: "Charles Hendrickson"
+date: "10/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Assignment 2.1 – dataRetrieval
+1) Add the Santa Paula Creek gauge to exercise we did in class
+2) What is the best way to query multiple sites using this R package?
+3) Create a plot showing any stream flow response to the rain of last night (10/04). Determine at what time did the stream flow peaked (if any) at the two locations?
+
+
+
+What we did in class (for reference):
+```{r}
+library(dataRetrieval)
+library(tidyverse)
+library(kableExtra)
+```
+
+# Exercise 1
+# Start a new Markdown document to plot the discharge time-series for the Ventura River from 2019-10-01 to 2020-10-05
+```{r}
+# Ventura River discharge time-series:
+siteNumber <- "11118500"
+parameterCd <- "00060"  # Discharge
+startDate <- "2019-10-01"  
+endDate <- "2020-10-05" 
+
+discharge <- readNWISdv(siteNumber, 
+                    parameterCd, startDate, endDate)
+
+```
+
+
+```{r}
+discharge <- discharge %>%
+  rename(discharge = X_00060_00003)
+```
+
+
+```{r}
+ggplot(data = discharge, aes(x = Date, y = discharge)) +
+  geom_line() +
+  labs(title = "USGS Discharge for the Ventura River",
+       x = "Date",
+       y = "Discharge (cubic feet per second)") +
+  theme_classic()
+```
+
+
+# Now add the Santa Paula Creek gauge to exercise we did in class:
+# Question: What is the best way to query multiple sites using this R package?
+
+# Answer: I think the best way to query multiple sites using this R package is to combine both sites into a vector, which puts both sites into the same data frame. 
+
+Santa Paula Creek and Ventura River discharge time-series for October 4-5th:
+```{r}
+# Santa Paula Creek discharge time-series:
+SP_and_V_discharge <- readNWISdata(sites= c("11113500","11118500"), service="iv", 
+                   parameterCd="00060", 
+                   startDate="2021-10-04T00:00Z", endDate="2021-10-05T11:59Z",
+                   tz = "America/Los_Angeles")
+```
+
+```{r}
+# Rename the column `X_00060_00000` as `discharge`
+SP_and_V_discharge <- SP_and_V_discharge %>% 
+  rename(discharge = X_00060_00000)
+```
+
+# Create a plot showing any stream flow response to the rain of last night (10/04). Determine at what time did the stream flow peaked (if any) at the two locations?
+
+```{r}
+library(ggplot2)
+
+ggplot(data = SP_and_V_discharge, aes(x = dateTime, y = discharge)) +
+  geom_line(aes(color = site_no)) +
+  labs(title = "USGS Discharge for Santa Paula Creek and Ventura River 
+(10/04/2021 - 10/05/2021)",
+       x = "Time",
+       y = "Discharge (cubic feet per second)") +
+  scale_color_discrete(name = "Site", labels = c("Santa Paula Creek (11113500)", "Ventura River (11118500)")) +
+  theme_classic()
+```
+
+Determine at what time did the stream flow peaked (if any) at the two locations?
+```{r}
+# Create separate data frames for the two sites 
+santa_paula_creek <- SP_and_V_discharge %>% 
+  filter(site_no == 11113500)
+
+ventura_river <- SP_and_V_discharge %>% 
+  filter(site_no == 11118500)
+
+```
+
+
+```{r}
+# Find what the max discharge was for the two sites 
+max_flow_santa_paula_creek <- max(santa_paula_creek$discharge)
+max_flow_santa_paula_creek
+
+max_flow_ventura_river <- max(ventura_river$discharge)
+max_flow_ventura_river
+```
+
+```{r}
+# Filter for the time when the max discharge occurred 
+time_max_flow_santa_paula <- santa_paula_creek %>%
+  filter(discharge == max_flow_santa_paula_creek) %>% 
+  select(dateTime, discharge)
+
+kable(time_max_flow_santa_paula)
+
+time_max_flow_ventura <- ventura_river %>%
+  filter(discharge == max_flow_ventura_river) %>% 
+  select(dateTime, discharge)
+
+kable(time_max_flow_ventura)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+

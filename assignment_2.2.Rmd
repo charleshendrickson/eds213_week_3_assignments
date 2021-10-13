@@ -1,0 +1,84 @@
+---
+title: 'exercise 2'
+author: "Charles Hendrickson"
+date: "10/6/2021"
+output: html_document
+---
+
+Let’s determine what percentage of Alaskan household are speaking only English!
+
+The data: https://doi.org/10.5063/F1N58JPP
+
+1) Read the metadata
+2) Download the data household_language.csv using metajam
+3) Read the data into R using metajam
+4) Write a piece of code that will compute the percentage of Alaskan household speaking only English for the year 2009 to 2015
+5) Create a plot to visualize this data
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Install metjam
+# install.packages("metajam")
+```
+
+```{r}
+# Load packages 
+library(metajam)
+library(tidyverse)
+library(here)
+```
+
+```{r}
+# set inputs
+data_obj <- "https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3A7fc6f6db-c5ea-426a-a743-1f2edafb43b8"
+path <- "~/Documents/eds213/week_2/data_2"
+# download data and metadata
+# download_d1_data(data_obj, path)
+```
+
+```{r}
+# Read the data 
+my_data <- metajam::read_d1_files("~/Documents/eds213/week_2/data_2/doi_10.5063_F1CJ8BPH__household_language__csv")
+
+```
+
+Write a piece of code that will compute the percentage of Alaskan household speaking only English for the year 2009 to 2015
+```{r}
+# Converting my_data from a list to a data frame 
+my_data <- my_data$data
+
+library(dplyr)
+library(tidyverse)
+
+years_to_include <- c(2009:2015)
+
+percent_english_only <- my_data %>%
+  select(Year, speak_only_english, total) %>%
+  filter(Year %in% years_to_include) %>% 
+  group_by(Year) %>% 
+  summarize(sum_speak_only_english = sum(speak_only_english),
+            sum_total = sum(total)) %>% 
+  mutate(Percent = 100 * (sum_speak_only_english / sum_total))
+
+percent_english_only
+
+```
+
+Create a plot to visualize this data
+```{r}
+ggplot(data = percent_english_only, aes(x = Year, y = Percent)) +
+  geom_line() +
+  labs(title = "Percentage of Alaskan Households Speaking Only English (2009-2015)",
+       x = "Year",
+       y = "Percent Speaking Only English (%)") +
+  theme_classic()
+```
+
+
+
+
